@@ -1,0 +1,4 @@
+atmNutkParanteWallFunction/atmNutkParanteWallFunctionFvPatchScalarField.C
+atmEpsilonWallFunction/atmEpsilonWallFunctionFvPatchScalarField.C
+
+LIB = $(FOAM_USER_LIBBIN)/libAtmModelsParanteWF

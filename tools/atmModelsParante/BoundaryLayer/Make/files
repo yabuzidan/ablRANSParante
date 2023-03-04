@@ -1,0 +1,6 @@
+atmBoundaryLayerParante/atmBoundaryLayerParante.C
+atmBoundaryLayerParanteInletVelocity/atmBoundaryLayerParanteInletVelocityFvPatchVectorField.C
+atmBoundaryLayerParanteInletK/atmBoundaryLayerParanteInletKFvPatchScalarField.C
+atmBoundaryLayerParanteInletEpsilon/atmBoundaryLayerParanteInletEpsilonFvPatchScalarField.C
+
+LIB = $(FOAM_USER_LIBBIN)/libAtmModelsParanteBC

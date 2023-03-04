@@ -1,0 +1,176 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+
+epsilonSource
+{
+    type            scalarCodedSource;
+    name            internalField;
+    selectionMode   all;
+    fields          (epsilon);
+    active			    true;
+
+  codeInclude
+    #{
+
+    #};
+  
+    codeAddSup
+    #{
+        // Read turbulence properties
+        const dictionary& RASdict = mesh_.lookupObject<IOdictionary>("momentumTransport").subDict("RAS");
+        const word& modelType = RASdict.lookup<word>("RASModel");
+        const dictionary& dict = RASdict.subDict(modelType + "Coeffs");
+
+        
+        // Assign parameters
+        const scalar ustar_ = dict.lookup<scalar>("ustar");
+        const scalar z0_ = dict.lookup<scalar>("z0");
+        const scalar kappa_ = dict.lookup<scalar>("kappa");
+        const scalar D1k_ = dict.lookup<scalar>("C1");
+        const scalar D2k_ = dict.lookup<scalar>("C2");
+        const scalar sigmaEps_ = dict.lookup<scalar>("sigmaEps");
+        // const scalar C1tke_ = dict.lookup<scalar>("C1tke");
+        // const scalar C2tke_ = dict.lookup<scalar>("C2tke");
+
+        // Get mesh center coordinates and volume
+        const vectorField& CellC = mesh_.C();
+        const scalarField& V = mesh_.V(); 
+	      
+        // Create pointer to epsilon source
+        scalarField& epsilonSource = eqn.source();
+
+        // Read Cmu field from solver
+        const volScalarField& Cmu(mesh_.lookupObject<volScalarField>("Cmu"));
+
+        // // Create Cmu field based on Parente equation
+        // volScalarField Cmu("Cmu1", mesh_.lookupObject<volScalarField>("k"));
+        // forAll(CellC, i)
+        // {
+        //   Cmu[i] = pow(ustar_,4)/pow(C1tke_*log(CellC[i].z() + z0_) + C2tke_ ,2);
+        // }
+
+        // Apply the source term
+        forAll(CellC, i)
+        {
+            {
+              // Parente: Eqn 8.
+               epsilonSource[i] -= (pow(ustar_,4)/(pow((CellC[i].z()+z0_),2)))
+               *(((D2k_-D1k_)*sqrt(Cmu[i])/pow(kappa_,2))-(1/sigmaEps_)) * V[i];
+            }
+        };
+  
+        // // Write Cmu field for debugging
+        // if(mesh_.time().outputTime())
+        // {
+        //   Cmu.write();
+        // }
+                
+    #};
+    
+    codeCorrect
+    #{
+    #};
+    
+    codeConstrain
+    #{
+    #};
+}
+
+
+//UNDER DEV
+
+// #include        "../0/include/ABLConditions"
+
+// kSource
+// {
+//     type            scalarCodedSource;
+//     name            internalField;
+//     selectionMode   all;
+//     fields          (k);
+//     active			    true;
+    
+//     codeInclude
+//     #{
+//       #include "fvcGrad.H"
+//       // #include "fvcSnGrad.H"
+//       // #include "fvcFlux.H"
+//       // #include "fvcMeshPhi.H"
+//       // #include "surfaceInterpolate.H"
+//       // #include "fvCFD.H"
+//       // #include "fvc.H"
+//     #};
+  
+//     codeAddSup
+//     #{			
+
+	       // const Time& time = mesh_.time();
+//         // const scalar ustar = mesh_.lookup<scalar>("ustar");
+
+//         const scalar ustar_ = 0.5777;
+//         const scalar kappa_ = 0.4;
+//         const scalar sigmak_ = 1.10;
+//         const scalar z0_ = 0.02;
+        
+//         const vectorField& CellC = mesh_.C();
+//         const scalarField& V = mesh_.V(); 
+
+// 	      scalarField& kSource = eqn.source();
+
+//         const volScalarField& k_ = mesh_.lookupObject<volScalarField>("k");
+
+//         // First derivative dk/dz
+//         volVectorField gradK("gradK", fvc::grad(k_));
+//         volScalarField dKdz = gradK.component(2);
+        
+//         // Calculate d()/dz term in Sk equation of Parente
+//         volScalarField Term = dKdz;
+//         forAll(CellC, i)
+//         {
+//           Term[i] = (CellC[i].z() + z0_)*dKdz[i] ;
+//         };
+
+//         // Find gradient
+//         volVectorField gradTerm("gradTerm", fvc::grad(dKdz));
+//         volScalarField gradTermz = gradTerm.component(2);
+
+//         // Apply kSource term
+//         forAll(CellC, i)
+//         {
+//           kSource[i] -= (ustar_*kappa_*gradTermz[i]/sigmak_) * V[i];
+//         };
+
+//         // Write fields
+//         // if(mesh_.time().outputTime())
+//         // {
+//         //   gradK.write();
+//         // }
+
+//     #};
+    
+//     codeCorrect
+//     #{
+//     #};
+    
+//     codeConstrain
+//     #{
+//     #};
+// }
+
+
+// // ************************************************************************* //
+
